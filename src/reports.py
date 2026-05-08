@@ -3,10 +3,38 @@ from typing import Optional
 from src.views import excel_read
 import datetime
 from pandas.tseries.offsets import DateOffset
+from functools import wraps
+import json
 
 operations = excel_read('../data/operations.xlsx')
 df = pd.DataFrame(operations)
 
+def param_deco(filename):
+    """Декоратор записи результата работы функции в файл"""
+    def wrapper(func):
+        @wraps(func)
+        def inner(*args, **kwargs):
+            result = func(*args, **kwargs)
+            try:
+                result.to_json(
+                    filename,
+                    orient='records',
+                    force_ascii=False,
+                    indent=4,
+                )
+                print(f"Отчёт успешно сохранён в файл: {filename}")
+            except AttributeError:
+                print(f"Ошибка: результат функции не является DataFrame. Не удалось сохранить в {filename}")
+            except PermissionError:
+                print(f"Ошибка доступа: нет прав для записи в файл {filename}")
+            except Exception as e:
+                print(f"Произошла непредвиденная ошибка при сохранении в {filename}: {e}")
+            return result
+        return inner
+    return wrapper
+
+
+@param_deco('../deco_result.json')
 def spending_by_category(transactions: pd.DataFrame,
                          category: str,
                          date: Optional[str] = None) -> pd.DataFrame:
@@ -39,6 +67,9 @@ def spending_by_category(transactions: pd.DataFrame,
     return result_df
 
 
+
+
+
+#
 # if __name__ == '__main__':
 #     print(spending_by_category(df, 'Супермаркеты', '31.10.2019'))
-#     # print(df)
