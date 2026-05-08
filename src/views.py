@@ -77,7 +77,6 @@ def top_transactions(data: list[dict]):
         category = transaction.get('Категория', '')
         description = transaction.get('Описание', '')
 
-        # Добавляем транзакцию в список
         processed_transactions.append({
             'date': date,
             'amount': amount_abs,
