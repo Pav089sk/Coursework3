@@ -6,7 +6,7 @@ operations = excel_read('../data/operations.xlsx')
 
 
 def cashback_cat(data: list[dict], year: str, month: str) -> json:
-    """Функция подсчета кэшбэка по категориям"""
+    """Функция подсчета кэшбэка по категориям за указанный месяц"""
     category_cashback = {}
     for operation in data:
         date_operation = operation.get('Дата операции')
@@ -35,6 +35,6 @@ def find_transaction():
 
     return json_data
 
-if __name__ == '__main__':
-    # print(find_transaction())
-    print(cashback_cat(operations,'2021','12'))
+# if __name__ == '__main__':
+#     print(find_transaction())
+#     print(cashback_cat(operations,'2021','12'))

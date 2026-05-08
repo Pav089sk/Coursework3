@@ -26,7 +26,7 @@ def excel_read(path_excel: str) -> list:
 
 
 
-if __name__ == '__main__':
-    # print(get_day("2025-06-17 23:45:21"))
-    print(excel_read('../data/operations.xlsx'))
+# if __name__ == '__main__':
+#     # print(get_day("2025-06-17 23:45:21"))
+#     print(excel_read('../data/operations.xlsx'))
 
