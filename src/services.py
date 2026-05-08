@@ -24,17 +24,19 @@ def cashback_cat(data: list[dict], year: str, month: str) -> json:
 
 
 def find_transaction():
-    """Функция поиска транзакций по телефону в формате '... +7 995 555-55-55'"""
+    """Функция поиска транзакций по номеру телефона"""
     new_transact = []
     for operation in operations:
         find_param = re.findall(r'\+\d\s\d{3}\s\d{3}-\d{2}-\d{2}',operation.get('Описание', ''))
-        if find_param:
+        find_param_2 = re.findall(r'\+7\s\(\d{3}\)\s\d{3}-\d{2}-\d{2}', operation.get('Описание', ''))
+        find_param_3 = re.findall(r'8\d{10}$', operation.get('Описание', ''))
+        if find_param or find_param_2 or find_param_3:
             new_transact.append(operation)
 
     json_data = json.dumps(new_transact, ensure_ascii=False)
 
     return json_data
 
-# if __name__ == '__main__':
-#     print(find_transaction())
-#     print(cashback_cat(operations,'2021','12'))
+if __name__ == '__main__':
+#     # print(find_transaction())
+    print(cashback_cat(operations,'2021','12'))

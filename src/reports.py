@@ -4,10 +4,21 @@ from src.views import excel_read
 import datetime
 from pandas.tseries.offsets import DateOffset
 from functools import wraps
-import json
+import logging
+import os
 
 operations = excel_read('../data/operations.xlsx')
 df = pd.DataFrame(operations)
+
+logger = logging.getLogger("reports")
+logger.setLevel(logging.DEBUG)
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(current_dir)
+log_path = os.path.join(project_root, "logs", "reports.log")
+file_handler = logging.FileHandler(log_path, mode="w")
+file_formater = logging.Formatter("%(asctime)s - %(filename)s - %(levelname)s: - %(message)s")
+file_handler.setFormatter(file_formater)
+logger.addHandler(file_handler)
 
 def param_deco(filename):
     """Декоратор записи результата работы функции в файл"""
@@ -16,19 +27,14 @@ def param_deco(filename):
         def inner(*args, **kwargs):
             result = func(*args, **kwargs)
             try:
-                result.to_json(
-                    filename,
-                    orient='records',
-                    force_ascii=False,
-                    indent=4,
-                )
-                print(f"Отчёт успешно сохранён в файл: {filename}")
+                result.to_json(filename, orient='records', force_ascii=False, indent=4)
+                logger.info(f"Отчёт успешно сохранён в файл: {filename}")
             except AttributeError:
-                print(f"Ошибка: результат функции не является DataFrame. Не удалось сохранить в {filename}")
+                logger.error(f"Ошибка: результат функции не является DataFrame. Не удалось сохранить в {filename}")
             except PermissionError:
-                print(f"Ошибка доступа: нет прав для записи в файл {filename}")
+                logger.error(f"Ошибка доступа: нет прав для записи в файл {filename}")
             except Exception as e:
-                print(f"Произошла непредвиденная ошибка при сохранении в {filename}: {e}")
+                logger.warning(f"Произошла непредвиденная ошибка при сохранении в {filename}: {e}")
             return result
         return inner
     return wrapper
@@ -67,9 +73,5 @@ def spending_by_category(transactions: pd.DataFrame,
     return result_df
 
 
-
-
-
-#
-# if __name__ == '__main__':
-#     print(spending_by_category(df, 'Супермаркеты', '31.10.2019'))
+if __name__ == '__main__':
+    print(spending_by_category(df, 'Супермаркеты', '31.10.2019'))
