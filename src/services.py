@@ -22,6 +22,7 @@ def cashback_cat(data: list[dict], year: str, month: str) -> json:
     return json.dumps(category_cashback, ensure_ascii=False)
 
 def easy_finder(data: list[dict]) -> json:
+    """Функция простого поиска транзакций по строке"""
     found_transactions = []
     search_word = input("Введите слово для поиска: ").lower().strip()
     for transaction in data:
@@ -41,7 +42,7 @@ def find_transaction(data: list[dict]):
     new_transact = []
     for operation in data:
         find_param = re.findall(r'\+\d\s\d{3}\s\d{3}-\d{2}-\d{2}',operation.get('Описание', ''))
-        find_param_2 = re.findall(r'\+7\s\(\d{3}\)\s\d{3}-\d{2}-\d{2}', operation.get('Описание', ''))
+        find_param_2 = re.findall(r'\+7\s*\(\d{3}\)\s*\d{3}-\d{2}-\d{2}', operation.get('Описание', ''))
         find_param_3 = re.findall(r'8\d{10}$', operation.get('Описание', ''))
         if find_param or find_param_2 or find_param_3:
             new_transact.append(operation)
@@ -51,6 +52,6 @@ def find_transaction(data: list[dict]):
     return json_data
 
 # if __name__ == '__main__':
-    # print(find_transaction(operations))
-#     print(cashback_cat(operations,'2021','12'))
-#     print(easy_finder(operations))
+#     print(find_transaction(operations))
+    # print(cashback_cat(operations,'2021','12'))
+    # print(easy_finder(operations))

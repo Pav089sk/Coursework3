@@ -72,6 +72,6 @@ def spending_by_category(transactions: pd.DataFrame,
     result_df = pd.DataFrame({'Суммарные траты': [total_spending]})
     return result_df
 
-
-if __name__ == '__main__':
-    print(spending_by_category(df, 'Супермаркеты', '31.10.2019'))
+#
+# if __name__ == '__main__':
+#     print(spending_by_category(df, 'Супермаркеты', '31.10.2019'))
