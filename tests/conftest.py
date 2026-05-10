@@ -18,6 +18,16 @@ def empty_transactions():
     columns = ['Дата платежа', 'Дата операции', 'Категория', 'Сумма операции']
     return pd.DataFrame(columns=columns)
 
+@pytest.fixture
+def invalid_data():
+    """DataFrame с некорректными данными: NaN, строки вместо чисел"""
+    return pd.DataFrame({
+        'Дата платежа': ['01.10.2021', '15.10.2021', '20.11.2021', '05.12.2021'],
+        'Дата операции': ['30.09.2021', 'invalid_date', '15.11.2021', '10.12.2021'],
+        'Категория': ['Продукты', 'Кафе', 'Продукты', 'Транспорт'],
+        'Сумма операции': [1000, 'не число', 243, 200]
+    })
+
 
 @pytest.fixture
 def get_no_category_transactions():

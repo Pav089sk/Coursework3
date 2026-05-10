@@ -26,7 +26,7 @@ def excel_read(path_excel: str) -> list:
     return excel_data
 
 
-operations = excel_read('../data/operations.xlsx')
+# operations = excel_read('../data/operations.xlsx')
 
 
 def card_stat(data: list[dict]):

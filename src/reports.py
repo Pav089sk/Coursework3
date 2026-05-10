@@ -6,9 +6,10 @@ from pandas.tseries.offsets import DateOffset
 from functools import wraps
 import logging
 import os
+import json
 
-operations = excel_read('../data/operations.xlsx')
-df = pd.DataFrame(operations)
+# operations = excel_read('../data/operations.xlsx')
+# df = pd.DataFrame(operations)
 
 logger = logging.getLogger("reports")
 logger.setLevel(logging.DEBUG)
@@ -27,7 +28,16 @@ def param_deco(filename):
         def inner(*args, **kwargs):
             result = func(*args, **kwargs)
             try:
-                result.to_json(filename, orient='records', force_ascii=False, indent=4)
+                if isinstance(result, pd.DataFrame):
+                    # Для DataFrame используем to_json
+                    result.to_json(filename, orient='records', force_ascii=False, indent=4)
+                else:
+                    # Для остальных типов — записываем как JSON
+                    with open(filename, 'w', encoding='utf-8') as f:
+                        json.dump({
+                            'result': result,
+                            'type': type(result).__name__
+                        }, f, ensure_ascii=False, indent=2)
                 logger.info(f"Отчёт успешно сохранён в файл: {filename}")
             except AttributeError:
                 logger.error(f"Ошибка: результат функции не является DataFrame. Не удалось сохранить в {filename}")

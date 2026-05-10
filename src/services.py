@@ -2,7 +2,7 @@ import re
 import json
 from src.views import excel_read
 
-operations = excel_read('../data/operations.xlsx')
+# operations = excel_read('../data/operations.xlsx')
 
 
 def cashback_cat(data: list[dict], year: str, month: str) -> json:
