@@ -98,13 +98,14 @@ def user_settings_import(data):
         res = json.load(file)
     return res
 
-load_dotenv()
-API_KEY = os.getenv("Your_API_Key")
+# не применяю для простоты проверки работы
+# load_dotenv()
+# API_KEY = os.getenv("Your_API_Key")
 
 def convert(operation):
     """Функция для возврата курса валют"""
     currencies_list = operation.get("user_currencies", {})
-    url = f'https://v6.exchangerate-api.com/v6/{API_KEY}/latest/RUB'
+    url = 'https://v6.exchangerate-api.com/v6/629ef18b30f0f590cca623f8/latest/RUB'
     response = requests.get(url)
     data = response.json()
     currency_rates =[]
@@ -161,7 +162,7 @@ def stocks_price(stocks):
 
 # if __name__ == '__main__':
 #     print(get_day("2025-06-17 23:45:21"))
-#     print(excel_read('../data/operations.xlsx'))
+#     print(excel_read('../data/operations.xlsx')[5])
 #     print(card_stat(operations))
 #     print(top_transactions(operations))
 #     print(user_settings_import('../user_settings.json'))

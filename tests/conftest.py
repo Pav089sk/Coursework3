@@ -2,6 +2,34 @@ import pytest
 import pandas as pd
 
 @pytest.fixture
+def settings_data():
+    return {
+        "user_currencies": ["USD", "EUR"],
+        "user_stocks": ["AAPL", "AMZN", "GOOGL", "MSFT", "TSLA"]
+    }
+
+@pytest.fixture
+def api_response():
+    return {
+        "conversion_rates": {
+            "USD": 0.0135,
+            "EUR": 0.0122,
+            "GBP": 0.0105,
+        }
+    }
+
+@pytest.fixture
+def mock_data():
+    return {
+        "user_currencies": ["USD", "EUR", "GBP"]
+    }
+
+@pytest.fixture
+def mock_stocks_data():
+    return {"user_stocks": ["AAPL", "AMZN", "GOOGL"]}
+
+
+@pytest.fixture
 def basic_transactions():
     """Базовый набор: транзакции за последние 3 месяца, есть нужная категория"""
     return pd.DataFrame({
