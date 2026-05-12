@@ -3,8 +3,6 @@ import pandas as pd
 import json
 import math
 import requests
-import os
-from dotenv import load_dotenv
 from twelvedata import TDClient
 
 
@@ -121,10 +119,8 @@ def convert(operation):
     result = {
         "currency_rates": currency_rates
     }
-    # Преобразуем словарь в строку JSON с отступами для читаемости
-    json_output = json.dumps(result, indent=2)
 
-    return json_output
+    return result
 
 # API_KEY_ = os.getenv("API_KEY_STOCKS")
 # Функция ниже обращается к API запрос к которой не выполняется без прямого указания ключа
@@ -155,18 +151,16 @@ def stocks_price(stocks):
         "stock_prices": stock_prices
     }
 
-    json_output = json.dumps(result, indent=2)
-
-    return json_output
+    return result
 
 
-# if __name__ == '__main__':
+if __name__ == '__main__':
 #     print(get_day("2025-06-17 23:45:21"))
 #     print(excel_read('../data/operations.xlsx')[5])
-#     print(card_stat(operations))
+#     print(card_stat(excel_read('../data/operations.xlsx')))
 #     print(top_transactions(operations))
 #     print(user_settings_import('../user_settings.json'))
 #     json.dumps(result_list, ensure_ascii=False, indent=2)
-#     print(convert(user_settings_import('../user_settings.json')))
+    print(convert(user_settings_import('../user_settings.json')))
 #     print(stocks_price((user_settings_import('../user_settings.json'))))
 #     print(convert(user_settings_import('../user_settings.json')))
