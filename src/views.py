@@ -23,10 +23,11 @@ def get_day(day_time: str):
     return answer
 
 
-def excel_read(path_excel: str) -> list:
+def excel_read(path_excel: str) -> pd.DataFrame:
     """Функция принимает путь до excel файла
     и возвращает список словарей из строк файла"""
-    excel_data = pd.read_excel(path_excel).to_dict("records")
+    excel_data = pd.read_excel(path_excel)
+    # .to_dict("records"))
     return excel_data
 
 
@@ -60,6 +61,12 @@ def card_stat(data: list[dict]):
     result_list = list(cards_data.values())
     return result_list
 
+def get_cards_info(operations: pd.DataFrame) -> list[dict]:
+    cards = operations.assign(last_digits=operations['Номер карты'].str[-4:])
+    grouped = cards.groupby('last_digits', as_index=False).agg(
+        total_spent=('Сумма операции', 'sum'), cashback=('Кэшбэк', 'sum')
+    )
+    return grouped.round(2).to_dict(orient='records')
 
 def top_transactions(data: list[dict]):
     """Функция отдаёт топ 5 транзакций по сумме платежа"""
@@ -79,8 +86,7 @@ def top_transactions(data: list[dict]):
         )
     sorted_transactions = sorted(processed_transactions, key=lambda x: x["amount"], reverse=True)
     top_5 = sorted_transactions[:5]
-    result = {"top_transactions": top_5}
-    return result
+    return top_5
 
 
 def user_settings_import(data):
@@ -117,7 +123,8 @@ def convert(operation):
 # Функция ниже обращается к API запрос к которой не выполняется без прямого указания ключа
 
 
-def stocks_price(stocks):
+def stocks_price(stocks: list):
+    """Функция для запроса стоимости акций"""
     stock_list = stocks.get("user_stocks", {})
     td = TDClient(apikey="0db2a2bf0a56477f96d16463562ff8ed")
     stock_prices = []
@@ -126,12 +133,13 @@ def stocks_price(stocks):
             price_data = td.price(symbol=stock).as_json()
             if "price" in price_data:
                 price = price_data["price"]
+                price_fl = round(float(price), 2)
             else:
                 print(f"Предупреждение: в ответе для {stock} не найдено поле 'price'. Полный ответ: {price_data}")
                 continue
 
             # Добавляем объект с названием акции и ценой в итоговый список
-            stock_prices.append({"stock": stock, "price": price})
+            stock_prices.append({"stock": stock, "price": price_fl})
         except Exception as e:
             print(f"Ошибка при получении цены для {stock}: {e}")
 
@@ -140,13 +148,13 @@ def stocks_price(stocks):
     return result
 
 
-if __name__ == "__main__":
-    #     print(get_day("2025-06-17 23:45:21"))
-    #     print(excel_read('../data/operations.xlsx')[5])
-    #     print(card_stat(excel_read('../data/operations.xlsx')))
-    #     print(top_transactions(operations))
-    #     print(user_settings_import('../user_settings.json'))
-    #     json.dumps(result_list, ensure_ascii=False, indent=2)
-    print(convert(user_settings_import("../user_settings.json")))
-#     print(stocks_price((user_settings_import('../user_settings.json'))))
-#     print(convert(user_settings_import('../user_settings.json')))
+# if __name__ == "__main__":
+#         print(get_day("2025-06-17 23:45:21"))
+#         print(excel_read('../data/operations.xlsx'))
+#         print(card_stat(excel_read('../data/operations.xlsx')))
+#         # print(top_transactions(operations))
+#         print(user_settings_import('../user_settings.json'))
+#         # json.dumps(result_list, ensure_ascii=False, indent=2)
+#         print(convert(user_settings_import("../user_settings.json")))
+#         print(stocks_price((user_settings_import('../user_settings.json'))))
+#         print(convert(user_settings_import('../user_settings.json')))

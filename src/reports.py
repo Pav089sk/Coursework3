@@ -24,7 +24,7 @@ file_handler.setFormatter(file_formater)
 logger.addHandler(file_handler)
 
 
-def param_deco(filename):
+def param_deco(filename: str):
     """Декоратор записи результата работы функции в файл"""
 
     def wrapper(func):
