@@ -6,7 +6,7 @@ import pandas as pd
 
 import re
 
-def cashback_cat(data: list[dict], year: int, month: int) -> str:
+def cashback_cat(data: list[dict], year: str, month: str) -> str:
     """Функция подсчета кэшбэка по категориям за указанный месяц"""
     # Шаг 1: Фильтрация по дате
     date_filtered = filter(

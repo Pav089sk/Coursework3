@@ -1,7 +1,6 @@
 import datetime
 import json
-import math
-
+from typing import List, Dict, Any
 import pandas as pd
 import requests
 from twelvedata import TDClient
@@ -34,59 +33,58 @@ def excel_read(path_excel: str) -> pd.DataFrame:
 # operations = excel_read('../data/operations.xlsx')
 
 
-def card_stat(data: list[dict]):
-    """Функция возвращает последние цифры карты общую сумму расходов и кэшбэк"""
-    cards_data = {}
-    for transaction in data:
-        card_number = transaction.get("Номер карты")
-        if not card_number or card_number != card_number:  # проверка на nan
-            continue
-        last_4_digits = card_number.replace("*", "")
-        amount = transaction.get("Сумма операции", 0)
-        if amount < 0:
-            amount = abs(amount)
-        else:
-            amount = 0
-        cashback = transaction.get("Кэшбэк", 0)
-        if cashback != cashback:  # проверка на nan
-            cashback = 0
-        if last_4_digits not in cards_data:
-            cards_data[last_4_digits] = {"last_digits": last_4_digits, "total_spent": 0, "cashback": 0}
-        cards_data[last_4_digits]["total_spent"] += round(amount, 2)
-        cards_data[last_4_digits]["cashback"] += cashback
-        for card in cards_data.values():
-            card["total_spent"] = round(card["total_spent"], 2)
-            card["cashback"] = round(card["cashback"], 2)
+def card_stat(df: pd.DataFrame) -> List[Dict[str, Any]]:
+    """Функция возвращает последние цифры карты, общую сумму расходов и кэшбэк"""
+    # 1. Фильтрация: убираем строки с отсутствующим номером карты
+    df_filtered = df[df['Номер карты'].notna()].copy()
+    # 2. Извлекаем последние 4 цифры номера карты (убираем звёздочки)
+    df_filtered['last_digits'] = df_filtered['Номер карты'].str.replace('*', '', regex=False)
+    # 3. Обрабатываем сумму операции: берём модуль для отрицательных значений, иначе — 0
+    df_filtered['amount'] = df_filtered['Сумма операции'].apply(
+        lambda x: abs(x) if x < 0 else 0
+    )
+    # 4. Заполняем пропущенные значения кэшбека нулями
+    df_filtered['cashback'] = df_filtered['Кэшбэк'].fillna(0)
+    # 5. Группируем по последним 4 цифрам карты и суммируем расходы и кэшбэк
+    grouped = df_filtered.groupby('last_digits').agg({
+        'amount': 'sum',
+        'cashback': 'sum'
+    }).reset_index()
+    # 6. Округляем результаты до 2 знаков после запятой
+    grouped['amount'] = grouped['amount'].round(2)
+    grouped['cashback'] = grouped['cashback'].round(2)
+    # 7. Преобразуем в список словарей для совместимости с исходной функцией
+    result_list = grouped.rename(columns={
+        'amount': 'total_spent',
+        'cashback': 'cashback'
+    }).to_dict('records')
 
-    result_list = list(cards_data.values())
     return result_list
 
-def get_cards_info(operations: pd.DataFrame) -> list[dict]:
-    cards = operations.assign(last_digits=operations['Номер карты'].str[-4:])
-    grouped = cards.groupby('last_digits', as_index=False).agg(
-        total_spent=('Сумма операции', 'sum'), cashback=('Кэшбэк', 'sum')
-    )
-    return grouped.round(2).to_dict(orient='records')
 
-def top_transactions(data: list[dict]):
-    """Функция отдаёт топ 5 транзакций по сумме платежа"""
-    processed_transactions = []
-    for transaction in data:
-        amount = transaction.get("Сумма платежа")
-        if amount is None:
-            continue
-        if isinstance(amount, float) and math.isnan(amount):
-            amount = 0
-        amount_abs = abs(amount)
-        date = transaction.get("Дата платежа", "")
-        category = transaction.get("Категория", "")
-        description = transaction.get("Описание", "")
-        processed_transactions.append(
-            {"date": date, "amount": amount_abs, "category": category, "description": description}
-        )
-    sorted_transactions = sorted(processed_transactions, key=lambda x: x["amount"], reverse=True)
-    top_5 = sorted_transactions[:5]
-    return top_5
+def top_transactions(df: pd.DataFrame) -> List[Dict[str, Any]]:
+    """Функция отдаёт топ‑5 транзакций по сумме платежа"""
+    # 1. Фильтрация: убираем строки с отсутствующей суммой платежа
+    df_filtered = df[df['Сумма платежа'].notna()].copy()
+    # 2. Обрабатываем сумму платежа: заменяем NaN на 0, берём модуль
+    df_filtered['amount'] = df_filtered['Сумма платежа'].fillna(0).abs()
+    # 3. Выбираем нужные столбцы и переименовываем их
+    result_df = df_filtered[[
+        'Дата платежа', 'Сумма платежа', 'Категория', 'Описание'
+    ]].rename(columns={
+        'Дата платежа': 'date',
+        'Сумма платежа': 'amount',
+        'Категория': 'category',
+        'Описание': 'description'
+    })
+    # Добавляем столбец с модулем суммы (уже обработанной)
+    result_df['amount'] = df_filtered['amount']
+    # 4. Сортируем по убыванию суммы платежа
+    sorted_df = result_df.sort_values('amount', ascending=False)
+  # 5. Берём топ‑5 строк
+    top_5_df = sorted_df.head(5)
+    # 6. Преобразуем в список словарей для совместимости с исходной функцией
+    return top_5_df.to_dict('records')
 
 
 def user_settings_import(data):
@@ -94,7 +92,6 @@ def user_settings_import(data):
     with open(data) as file:
         res = json.load(file)
     return res
-
 
 # не применяю для простоты проверки работы
 # load_dotenv()
@@ -105,45 +102,108 @@ def convert(operation):
     """Функция для возврата курса валют"""
     currencies_list = operation.get("user_currencies", {})
     url = "https://v6.exchangerate-api.com/v6/629ef18b30f0f590cca623f8/latest/RUB"
-    response = requests.get(url)
-    data = response.json()
-    currency_rates = []
-    api_dict = data.get("conversion_rates")
-    for currency in currencies_list:
-        rate = api_dict.get(currency)
-        if rate is not None:
-            currency_rates.append({"currency": currency, "rate": round((1 / rate), 2)})
-    # Формируем итоговый JSON в нужном формате
-    result = {"currency_rates": currency_rates}
 
-    return result
+    try:
+        response = requests.get(url, timeout=10)
+
+        if response.status_code != 200:
+            return {
+                "error": f"Ошибка API: HTTP {response.status_code}",
+                "currency_rates": []
+            }
+
+        data = response.json()
+        currency_rates = []
+        api_dict = data.get("conversion_rates")
+
+        if not api_dict:
+            return {
+                "error": "Не получены данные о курсах валют от API",
+                "currency_rates": []
+            }
+
+        for currency in currencies_list:
+            rate = api_dict.get(currency)
+            if rate is not None:
+                try:
+                    currency_rates.append({
+                        "currency": currency,
+                        "rate": round((1 / rate), 2)
+                    })
+                except (ZeroDivisionError, TypeError):
+                    # Обрабатываем случай, если rate = 0 или некорректный тип
+                    continue
+
+        return {"currency_rates": currency_rates}
+
+    except requests.exceptions.Timeout:
+        return {
+            "error": "Превышено время ожидания ответа от сервера",
+            "currency_rates": []
+        }
+    except requests.exceptions.ConnectionError:
+        return {
+            "error": "Ошибка подключения к серверу (проблемы с интернетом)",
+            "currency_rates": []
+        }
+    except requests.exceptions.RequestException as e:
+        return {
+            "error": f"Общая ошибка запроса: {str(e)}",
+            "currency_rates": []
+        }
+    except (KeyError, ValueError, TypeError) as e:
+        return {
+            "error": f"Ошибка обработки данных: {str(e)}",
+            "currency_rates": []
+        }
 
 
 # API_KEY_ = os.getenv("API_KEY_STOCKS")
 # Функция ниже обращается к API запрос к которой не выполняется без прямого указания ключа
 
-
 def stocks_price(stocks: list):
     """Функция для запроса стоимости акций"""
     stock_list = stocks.get("user_stocks", {})
-    td = TDClient(apikey="0db2a2bf0a56477f96d16463562ff8ed")
-    stock_prices = []
-    for stock in stock_list:
-        try:
-            price_data = td.price(symbol=stock).as_json()
-            if "price" in price_data:
+    errors = []
+
+    try:
+        td = TDClient(apikey="0db2a2bf0a56477f96d16463562ff8ed")
+        stock_prices = []
+
+        for stock in stock_list:
+            try:
+                price_data = td.price(symbol=stock).as_json()
+
+                if "price" not in price_data:
+                    errors.append(f"Для {stock}: не найдено поле 'price' в ответе API")
+                    continue
+
                 price = price_data["price"]
-                price_fl = round(float(price), 2)
-            else:
-                print(f"Предупреждение: в ответе для {stock} не найдено поле 'price'. Полный ответ: {price_data}")
+                if price is None:
+                    errors.append(f"Для {stock}: получено значение None для цены")
+                    continue
+                try:
+                    price_fl = round(float(price), 2)
+                    stock_prices.append({"stock": stock, "price": price_fl})
+                except (ValueError, TypeError) as e:
+                    errors.append(f"Для {stock}: ошибка преобразования цены в число — {str(e)}")
+                    continue
+
+            except Exception as e:
+                errors.append(f"Для {stock}: общая ошибка запроса — {str(e)}")
                 continue
 
-            # Добавляем объект с названием акции и ценой в итоговый список
-            stock_prices.append({"stock": stock, "price": price_fl})
-        except Exception as e:
-            print(f"Ошибка при получении цены для {stock}: {e}")
+    except Exception as e:
+        # Ошибка инициализации клиента или критическая ошибка
+        return {
+            "error": f"Критическая ошибка при работе с API: {str(e)}",
+            "stock_prices": [],
+            "errors": errors
+        }
 
     result = {"stock_prices": stock_prices}
+    if errors:
+        result["errors"] = errors
 
     return result
 
