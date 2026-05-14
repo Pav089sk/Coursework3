@@ -24,9 +24,8 @@ def get_day(day_time: str):
 
 def excel_read(path_excel: str) -> pd.DataFrame:
     """Функция принимает путь до excel файла
-    и возвращает список словарей из строк файла"""
+    и возвращает DataFrame"""
     excel_data = pd.read_excel(path_excel)
-    # .to_dict("records"))
     return excel_data
 
 

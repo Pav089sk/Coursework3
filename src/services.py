@@ -2,17 +2,17 @@ from collections import defaultdict
 from datetime import datetime
 from typing import List, Dict, Any
 import json
-import pandas as pd
-
 import re
 
-def cashback_cat(data: list[dict], year: str, month: str) -> str:
+
+
+def cashback_cat(data: list[dict], year: int, month: int) -> str:
     """Функция подсчета кэшбэка по категориям за указанный месяц"""
     # Шаг 1: Фильтрация по дате
     date_filtered = filter(
         lambda op: (
-            op['Дата операции'].year == year and
-            op['Дата операции'].month == month
+                datetime.strptime(op['Дата операции'], '%d.%m.%Y %H:%M:%S').year == year and
+                datetime.strptime(op['Дата операции'], '%d.%m.%Y %H:%M:%S').month == month
         ),
         data
     )

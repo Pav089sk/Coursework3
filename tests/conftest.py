@@ -1,6 +1,9 @@
 import pandas as pd
 import pytest
 
+@pytest.fixture
+def temp_file(tmp_path):
+    return tmp_path / "test_output.json"
 
 @pytest.fixture
 def settings_data():
@@ -16,6 +19,24 @@ def api_response():
             "GBP": 0.0105,
         }
     }
+
+@pytest.fixture
+def api_empty_response():
+    return {
+        "conversion_rates": {
+        }
+    }
+
+@pytest.fixture
+def api_uncorrect_rates():
+    return {
+        "conversion_rates": {
+            "USD": 0,
+            "EUR": "BBB",
+            "GBP": "CCC",
+        }
+    }
+
 
 
 @pytest.fixture
