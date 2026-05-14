@@ -8,11 +8,6 @@ from typing import Optional
 import pandas as pd
 from pandas.tseries.offsets import DateOffset
 
-from src.views import excel_read
-
-# operations = excel_read('../data/operations.xlsx')
-# df = pd.DataFrame(operations)
-
 logger = logging.getLogger("reports")
 logger.setLevel(logging.DEBUG)
 current_dir = os.path.dirname(os.path.abspath(__file__))

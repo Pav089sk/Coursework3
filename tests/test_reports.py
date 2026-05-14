@@ -1,5 +1,3 @@
-from logging import raiseExceptions
-
 from src.reports import param_deco, spending_by_category
 
 
@@ -20,6 +18,7 @@ def test_invalid_dates(invalid_data):
 
 def test_deco(tmp_path):
     file = tmp_path / "test.txt"
+
     @param_deco(file)
     def test_func(a, b):
         result = a + b

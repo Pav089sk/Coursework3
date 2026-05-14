@@ -1,12 +1,12 @@
 import datetime
 import json
-from typing import List, Dict, Any
+from typing import Any
 import pandas as pd
 import requests
 from twelvedata import TDClient
 
 
-def get_day(day_time: str):
+def get_day(day_time: str) -> str:
     """Функция принимает строку в формате YYYY-MM-DD HH:MM:SS для корректного приветствия"""
     day_object = datetime.datetime.strptime(day_time, "%Y-%m-%d %H:%M:%S")
     time_only = day_object.time()
@@ -32,72 +32,60 @@ def excel_read(path_excel: str) -> pd.DataFrame:
 # operations = excel_read('../data/operations.xlsx')
 
 
-def card_stat(df: pd.DataFrame) -> List[Dict[str, Any]]:
+def card_stat(df: pd.DataFrame) -> list:
     """Функция возвращает последние цифры карты, общую сумму расходов и кэшбэк"""
     # 1. Фильтрация: убираем строки с отсутствующим номером карты
-    df_filtered = df[df['Номер карты'].notna()].copy()
+    df_filtered = df[df["Номер карты"].notna()].copy()
     # 2. Извлекаем последние 4 цифры номера карты (убираем звёздочки)
-    df_filtered['last_digits'] = df_filtered['Номер карты'].str.replace('*', '', regex=False)
+    df_filtered["last_digits"] = df_filtered["Номер карты"].str.replace("*", "", regex=False)
     # 3. Обрабатываем сумму операции: берём модуль для отрицательных значений, иначе — 0
-    df_filtered['amount'] = df_filtered['Сумма операции'].apply(
-        lambda x: abs(x) if x < 0 else 0
-    )
+    df_filtered["amount"] = df_filtered["Сумма операции"].apply(lambda x: abs(x) if x < 0 else 0)
     # 4. Заполняем пропущенные значения кэшбека нулями
-    df_filtered['cashback'] = df_filtered['Кэшбэк'].fillna(0)
+    df_filtered["cashback"] = df_filtered["Кэшбэк"].fillna(0)
     # 5. Группируем по последним 4 цифрам карты и суммируем расходы и кэшбэк
-    grouped = df_filtered.groupby('last_digits').agg({
-        'amount': 'sum',
-        'cashback': 'sum'
-    }).reset_index()
+    grouped = df_filtered.groupby("last_digits").agg({"amount": "sum", "cashback": "sum"}).reset_index()
     # 6. Округляем результаты до 2 знаков после запятой
-    grouped['amount'] = grouped['amount'].round(2)
-    grouped['cashback'] = grouped['cashback'].round(2)
+    grouped["amount"] = grouped["amount"].round(2)
+    grouped["cashback"] = grouped["cashback"].round(2)
     # 7. Преобразуем в список словарей для совместимости с исходной функцией
-    result_list = grouped.rename(columns={
-        'amount': 'total_spent',
-        'cashback': 'cashback'
-    }).to_dict('records')
+    result_list = grouped.rename(columns={"amount": "total_spent", "cashback": "cashback"}).to_dict("records")
 
     return result_list
 
 
-def top_transactions(df: pd.DataFrame) -> List[Dict[str, Any]]:
+def top_transactions(df: pd.DataFrame) -> list:
     """Функция отдаёт топ‑5 транзакций по сумме платежа"""
     # 1. Фильтрация: убираем строки с отсутствующей суммой платежа
-    df_filtered = df[df['Сумма платежа'].notna()].copy()
+    df_filtered = df[df["Сумма платежа"].notna()].copy()
     # 2. Обрабатываем сумму платежа: заменяем NaN на 0, берём модуль
-    df_filtered['amount'] = df_filtered['Сумма платежа'].fillna(0).abs()
+    df_filtered["amount"] = df_filtered["Сумма платежа"].fillna(0).abs()
     # 3. Выбираем нужные столбцы и переименовываем их
-    result_df = df_filtered[[
-        'Дата платежа', 'Сумма платежа', 'Категория', 'Описание'
-    ]].rename(columns={
-        'Дата платежа': 'date',
-        'Сумма платежа': 'amount',
-        'Категория': 'category',
-        'Описание': 'description'
-    })
+    result_df = df_filtered[["Дата платежа", "Сумма платежа", "Категория", "Описание"]].rename(
+        columns={"Дата платежа": "date", "Сумма платежа": "amount", "Категория": "category", "Описание": "description"}
+    )
     # Добавляем столбец с модулем суммы (уже обработанной)
-    result_df['amount'] = df_filtered['amount']
+    result_df["amount"] = df_filtered["amount"]
     # 4. Сортируем по убыванию суммы платежа
-    sorted_df = result_df.sort_values('amount', ascending=False)
-  # 5. Берём топ‑5 строк
+    sorted_df = result_df.sort_values("amount", ascending=False)
+    # 5. Берём топ‑5 строк
     top_5_df = sorted_df.head(5)
     # 6. Преобразуем в список словарей для совместимости с исходной функцией
-    return top_5_df.to_dict('records')
+    return top_5_df.to_dict("records")
 
 
-def user_settings_import(data):
+def user_settings_import(data: str) -> Any:
     """Функция открывает файл с пользовательскими настройками"""
     with open(data) as file:
         res = json.load(file)
     return res
+
 
 # не применяю для простоты проверки работы
 # load_dotenv()
 # API_KEY = os.getenv("Your_API_Key")
 
 
-def convert(operation):
+def convert(operation: dict) -> dict:
     """Функция для возврата курса валют"""
     currencies_list = operation.get("user_currencies", {})
     url = "https://v6.exchangerate-api.com/v6/629ef18b30f0f590cca623f8/latest/RUB"
@@ -106,61 +94,41 @@ def convert(operation):
         response = requests.get(url, timeout=10)
 
         if response.status_code != 200:
-            return {
-                "error": f"Ошибка API: HTTP {response.status_code}",
-                "currency_rates": []
-            }
+            return {"error": f"Ошибка API: HTTP {response.status_code}", "currency_rates": []}
 
         data = response.json()
         currency_rates = []
         api_dict = data.get("conversion_rates")
 
         if not api_dict:
-            return {
-                "error": "Не получены данные о курсах валют от API",
-                "currency_rates": []
-            }
+            return {"error": "Не получены данные о курсах валют от API", "currency_rates": []}
 
         for currency in currencies_list:
             rate = api_dict.get(currency)
             if rate is not None:
                 try:
-                    currency_rates.append({
-                        "currency": currency,
-                        "rate": round((1 / rate), 2)
-                    })
-                except (ZeroDivisionError, TypeError):
+                    currency_rates.append({"currency": currency, "rate": round((1 / rate), 2)})
+                except ZeroDivisionError or TypeError:
                     # Обрабатываем случай, если rate = 0 или некорректный тип
                     continue
 
         return {"currency_rates": currency_rates}
 
     except requests.exceptions.Timeout:
-        return {
-            "error": "Превышено время ожидания ответа от сервера",
-            "currency_rates": []
-        }
+        return {"error": "Превышено время ожидания ответа от сервера", "currency_rates": []}
     except requests.exceptions.ConnectionError:
-        return {
-            "error": "Ошибка подключения к серверу (проблемы с интернетом)",
-            "currency_rates": []
-        }
+        return {"error": "Ошибка подключения к серверу (проблемы с интернетом)", "currency_rates": []}
     except requests.exceptions.RequestException as e:
-        return {
-            "error": f"Общая ошибка запроса: {str(e)}",
-            "currency_rates": []
-        }
+        return {"error": f"Общая ошибка запроса: {str(e)}", "currency_rates": []}
     except (KeyError, ValueError, TypeError) as e:
-        return {
-            "error": f"Ошибка обработки данных: {str(e)}",
-            "currency_rates": []
-        }
+        return {"error": f"Ошибка обработки данных: {str(e)}", "currency_rates": []}
 
 
 # API_KEY_ = os.getenv("API_KEY_STOCKS")
 # Функция ниже обращается к API запрос к которой не выполняется без прямого указания ключа
 
-def stocks_price(stocks: list):
+
+def stocks_price(stocks: dict) -> dict:
     """Функция для запроса стоимости акций"""
     stock_list = stocks.get("user_stocks", {})
     errors = []
@@ -194,11 +162,7 @@ def stocks_price(stocks: list):
 
     except Exception as e:
         # Ошибка инициализации клиента или критическая ошибка
-        return {
-            "error": f"Критическая ошибка при работе с API: {str(e)}",
-            "stock_prices": [],
-            "errors": errors
-        }
+        return {"error": f"Критическая ошибка при работе с API: {str(e)}", "stock_prices": [], "errors": errors}
 
     result = {"stock_prices": stock_prices}
     if errors:
